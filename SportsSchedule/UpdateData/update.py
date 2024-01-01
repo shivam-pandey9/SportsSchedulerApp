@@ -6,7 +6,7 @@ import csv
 from datetime import datetime
 import pytz
 
-
+data_set = set()
 
 def convert_to_gmt530(date_string):
     # instead just cleaned date , didn't convert
@@ -24,14 +24,28 @@ def convert_to_gmt530(date_string):
     ans = date_no+' '+date_month+' '+time+' '+tp+' '+gm + ' '+day
     return ans
 
+matching_string=""
+def check_data(str):
+    matching_string = next((t.strip() for t in data_set if t.strip().startswith(str.strip())), None)
+    # is_prefix = any(t.strip().startswith(str.strip()) for t in data_set)
+    if matching_string is not None:
+        return False
+
+    return True
+
+def set_init():
+    with open("../Design/data.csv", mode='r') as file:
+        for line in file:
+            data_set.add(line)
 
 
 def update_ufc_schedule():
+    set_init()
     url = "https://www.ufc.com/events"
     response = requests.get(url)
     if response.status_code == 200:
         with open("../Design/data.csv", mode='a') as file:
-            print("file opened successfully")
+            # print("file opened successfully")
             
             soup = BeautifulSoup(response.text, 'html.parser')
             fight_cards = soup.find(id = 'events-list-upcoming')
@@ -46,9 +60,30 @@ def update_ufc_schedule():
                 watch = "SonyLiv/Jiotv"
                 comment = ""
                 dataTowrite = event+','+local_date+','+date_end+','+location+','+watch+','+comment+"\n"
-                file.write(dataTowrite)
+                if check_data(dataTowrite):
+                    file.write(dataTowrite)
+                else:
+                    file.write(matching_string)
             print("Updated Ufc Schedule to file Successfully")
     else:
-        print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
+        print(f"Failed to retrieve ufc webpage. Status code: {response.status_code}")
+
+def update_football_schedule():
+    # print("hello")
+    set_init()
+    url = "https://www.google.com"
+    response = requests.get(url)
+    if response.status_code == 200:
+        print("extract football if needed")
+    else:
+        print(f"Failed to retrieve football webpage. Status code: {response.status_code}")
+
+    # 
+
 
 update_ufc_schedule()
+update_football_schedule()
+
+
+
+print("Python script executed successfully")
